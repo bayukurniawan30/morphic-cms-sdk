@@ -1,0 +1,38 @@
+{
+  "name": "@morphic-cms/sdk",
+  "version": "0.1.0",
+  "description": "Framework-neutral JavaScript and TypeScript client for Morphic CMS.",
+  "type": "module",
+  "sideEffects": false,
+  "files": ["dist", "README.md", "LICENSE"],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bayukurniawan30/morphic-cms-sdk.git"
+  },
+  "keywords": ["morphic", "morphic-cms", "headless-cms", "cms", "sdk"],
+  "license": "MIT",
+  "scripts": {
+    "build": "tsup",
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
