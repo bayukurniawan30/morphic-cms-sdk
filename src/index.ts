@@ -1,5 +1,6 @@
 export type EntryStatus = 'draft' | 'published' | (string & {})
-export type SortField = 'id' | 'createdAt'
+/** System fields or a sortable top-level schema field (validated by the CMS). */
+export type SortField = 'id' | 'createdAt' | (string & {})
 export type SortDirection = 'asc' | 'desc'
 
 export type Pagination = {
@@ -72,6 +73,28 @@ export type ExactFilters<TContent extends Record<string, unknown>> = Partial<{
   >
 }>
 
+export type FilterScalar = string | number | boolean
+
+/** One equality/contains operator, or one or both inclusive date boundaries. */
+export type FilterOperators<TValue extends FilterScalar = FilterScalar> =
+  | { eq: TValue; icontains?: never; gte?: never; lte?: never }
+  | { eq?: never; icontains: Extract<TValue, string>; gte?: never; lte?: never }
+  | { eq?: never; icontains?: never; gte: Extract<TValue, string>; lte?: Extract<TValue, string> }
+  | { eq?: never; icontains?: never; gte?: Extract<TValue, string>; lte: Extract<TValue, string> }
+
+export type EntryFilter<TValue extends FilterScalar = FilterScalar> =
+  | TValue
+  | FilterOperators<TValue>
+
+/** Content types describe values, not schema kinds; the CMS validates field support. */
+export type EntryFilters<TContent extends Record<string, unknown> = Record<string, unknown>> = Partial<{
+  [Key in keyof TContent as unknown extends TContent[Key]
+    ? Key
+    : Extract<TContent[Key], FilterScalar> extends never ? never : Key]: EntryFilter<
+      unknown extends TContent[Key] ? FilterScalar : Extract<TContent[Key], FilterScalar>
+    >
+}>
+
 export type ListEntriesOptions<TContent extends Record<string, unknown>> = {
   page?: number
   limit?: number
@@ -80,7 +103,7 @@ export type ListEntriesOptions<TContent extends Record<string, unknown>> = {
   trash?: boolean
   sortBy?: SortField
   sortDir?: SortDirection
-  filters?: ExactFilters<TContent>
+  filters?: EntryFilters<TContent>
 }
 
 export type EntryWriteOptions = {
@@ -164,7 +187,14 @@ export const createMorphicClient = (options: MorphicClientOptions) => {
         if (value !== undefined) query.set(key, String(value))
       }
       for (const [field, value] of Object.entries(listOptions.filters || {})) {
-        if (value !== undefined) query.set(`filter[${field}]`, String(value))
+        if (value === undefined) continue
+        if (value !== null && typeof value === 'object') {
+          for (const [operator, operand] of Object.entries(value)) {
+            if (operand !== undefined) query.set(`filter[${field}][${operator}]`, String(operand))
+          }
+        } else {
+          query.set(`filter[${field}]`, String(value))
+        }
       }
       return request<EntryList<TContent>>(`/collections/${encodeURIComponent(String(collection))}/entries`, { query })
     },
